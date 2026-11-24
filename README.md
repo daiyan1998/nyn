@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tennor & Co. — Next.js rebuild
 
-## Getting Started
+A Next.js rebuild of the Tennor & Co. single-page site (https://tennor-and-co-8f5c2.web.app/), with the shop features working on mock data.
 
-First, run the development server:
+## Run
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+pnpm dev            # http://localhost:3000
+pnpm test           # unit tests (Vitest)
+pnpm test:e2e       # end-to-end tests (Playwright; builds and starts the app on :3100)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## What's real and what's mocked
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+There is no database, real payment or email. Everything else works, set up for **international** customers:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Feature | How it works |
+| --- | --- |
+| Products | `src/lib/data/products.data.ts` (prices in USD), read through the `Catalog` interface in `src/lib/data/index.ts`. To use a real backend, replace `mockCatalog`. |
+| Currency | Detected from the browser (en-GB → GBP, de-DE → EUR…), changeable in the header or mobile menu. Mock exchange rates are in `src/lib/config.ts`. |
+| Shipping | Six worldwide zones with rates and delivery estimates, free over $120, all in `src/lib/config.ts`. Destination is detected and can be changed in the bag or at checkout. |
+| Bag | Zustand store saved in `localStorage` (`src/store/shop.ts`). Shows a free-shipping progress bar and the full total before checkout. |
+| Checkout | Server action `placeOrder` (`src/app/actions.ts`). Validates with zod, re-prices from the catalogue, checks stock, simulates payment (card / PayPal, or cash on delivery for Bangladesh only), and returns a fake order. Fields are checked as soon as the customer leaves them; a draft is saved and remembered for next time. |
+| Orders | Saved in the browser that placed them. `/orders/[id]` moves Placed → Confirmed → Shipped (with a mock tracking number). |
+| Contact | Floating "Ask us" button that opens WhatsApp or email, pre-filled with the product or order being viewed. |
 
-## Learn More
+**Placeholders to confirm before launch** are marked `PLACEHOLDER` in `src/lib/config.ts` and `products.data.ts`: USD prices, exchange rates, shipping rates and times, the free-shipping threshold, the return policy wording, and social links (hidden until set).
 
-To learn more about Next.js, take a look at the following resources:
+The Fold in tan is out of stock on purpose, to show the sold-out state.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `src/app/page.tsx`: the original page ported section by section. Its CSS is ported into `globals.css` with the original class names and design tokens. New pages use Tailwind with the same tokens (`bg-ink`, `text-brass-bright`, `font-mono`…).
+- `src/components/PageMotion.tsx`: GSAP + ScrollTrigger ported from the original (hero entrance, scroll reveals, parallax, stitch rail). It respects `prefers-reduced-motion`.
+- `src/app/products/[slug]`, `src/app/checkout`, `src/app/orders/[id]`: pages that don't exist on the original.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Images are Unsplash placeholders, as on the original site.
